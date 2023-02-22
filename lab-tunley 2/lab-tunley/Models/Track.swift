@@ -17,12 +17,12 @@ struct Track: Decodable{
     // Detail properties
     let collectionName: String
     let primaryGenreName: String
-    //let releaseDate: Date
+    let releaseDate: Date
     let trackTimeMillis: Int
 }
 
-struct TracksResponse: Decodable{
-    
+struct TracksResponse : Decodable {
+  let results : [Track]
 }
 
 // TODO: Pt 1 - Create an extension with a mock tracks static var

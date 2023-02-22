@@ -28,34 +28,58 @@ class TracksViewController: UIViewController, UITableViewDataSource {
         // The data task method attempts to retrieve the contents of a URL based on the specified URL.
         // When finished, it calls it's completion handler (closure) passing in optional values for data (the data we want to fetch), response (info about the response like status code) and error (if the request was unsuccessful)
         let task = URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
-
-            // Handle any errors
-            if let error = error {
-                print("❌ Network error: \(error.localizedDescription)")
-            }
-
-            // Make sure we have data
-            guard let data = data else {
-                print("❌ Data is nil")
-                return
-            }
-
+                  
+                  // Handle any errors
+                  if let error = error {
+                    print("❌ Network error: \(error.localizedDescription)")
+                  }
+                  
+                  // Make sure we have data
+                  guard let data = data else {
+                    print("❌ Data is nil")
+                    return
+                  }
+                  
             // The `JSONSerialization.jsonObject(with: data)` method is a "throwing" function (meaning it can throw an error) so we wrap it in a `do` `catch`
-            // We cast the resultant returned object to a dictionary with a `String` key, `Any` value pair.
-            // Create a JSON Decoder
-            let decoder = JSONDecoder()
+                      // We cast the resultant returned object to a dictionary with a `String` key, `Any` value pair.
+                      do {
+                        // Create a JSON Decoder
+                        let decoder = JSONDecoder()
+                          // Create a date formatter
+                          let dateFormatter = DateFormatter()
 
-            // Use the JSON decoder to try and map the data to our custom model.
-            // TrackResponse.self is a reference to the type itself, tells the decoder what to map to.
-            let response = try decoder.decode(TracksResponse.self, from: data)
+                          // Set a custom date format based on what we see coming back in the JSON
+                          dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZ"
 
-            // Access the array of tracks from the `results` property
-            let tracks = response.results
-            print("✅ \(tracks)")
-        }
+                          // Set the decoding strategy on the JSON decoder to use our custom date format
+                          decoder.dateDecodingStrategy = .formatted(dateFormatter)
+
+                        // Use the JSON decoder to try and map the data to our custom model.
+                        // TrackResponse.self is a reference to the type itself, tells the decoder what to map to.
+                        let response = try decoder.decode(TracksResponse.self, from: data)
+                        
+                        // Access the array of tracks from the `results` property
+                        let tracks = response.results// Execute UI updates on the main thread when calling from a background callback
+                          // Execute UI updates on the main thread when calling from a background callback
+                          DispatchQueue.main.async {
+
+                              // Set the view controller's tracks property as this is the one the table view references
+                              self?.tracks = tracks
+
+                              // Make the table view reload now that we have new data
+                              self?.tableView.reloadData()
+                          }
+                       
+                        
+                        print("✅ \(tracks)")
+                      } catch {
+                        print("❌ Error parsing JSON: \(error.localizedDescription)")
+                      }
+                    }
 
         // Initiate the network request
         task.resume()
+        print("👋 Below the closure")
         print(tracks)
 
         tableView.dataSource = self
